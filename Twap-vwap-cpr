@@ -1,0 +1,378 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © milind
+
+//@version=5
+indicator(title='Milind Personal Indicator ', shorttitle='Milind Personal Indicator ', overlay=true, format=format.price, precision=2)
+
+h = request.security(syminfo.tickerid, 'D', high[1], lookahead=barmerge.lookahead_on)
+l = request.security(syminfo.tickerid, 'D', low[1], lookahead=barmerge.lookahead_on)
+c = request.security(syminfo.tickerid, 'D', close[1], lookahead=barmerge.lookahead_on)
+
+notHigherTimeframe = timeframe.period != '30' and timeframe.period != '45' and timeframe.period != '60' and timeframe.period != '120' and timeframe.period != '180' and timeframe.period != '240' and timeframe.period != 'D' and timeframe.period != 'W' and timeframe.period != 'M'
+
+calculatePivot() =>
+    (h + l + c) / 3
+
+calculateBC() =>
+    (h + l) / 2
+
+calculateTC() =>
+    calculatePivot() - calculateBC() + calculatePivot()
+
+truncate(number, decimals) =>
+    factor = math.pow(10, decimals)
+    int(number * factor) / factor
+    //round(number * 10) / 10
+
+pivot = calculatePivot()
+tc = calculateTC()
+bc = calculateBC()
+
+if tc < bc
+    t = tc
+    tc := bc
+    bc := t
+    bc
+
+r1Level = truncate(2 * pivot - l, 2)
+r2Level = truncate(pivot + h - l, 2)
+r3Level = truncate(h + 2 * (pivot - l), 2)
+r4Level = truncate(h + 3 * (pivot - l), 2)
+r5Level = truncate(h + 4 * (pivot - l), 2)
+s1Level = truncate(2 * pivot - h, 2)
+s2Level = truncate(pivot - (h - l), 2)
+s3Level = truncate(l - 2 * (h - pivot), 2)
+s4Level = truncate(l - 3 * (h - pivot), 2)
+s5Level = truncate(l - 4 * (h - pivot), 2)
+
+
+PlotCPR = input(title='Plot CPR?', defval=true)
+if(PlotCPR == false)
+    pivot := na
+    tc := na
+    bc := na
+    r1Level := na
+    s1Level := na
+    s2Level := na
+    r2Level := na
+    r3Level := na
+    s3Level := na
+    r4Level := na
+    r5Level := na
+    s4Level := na
+    s5Level := na
+
+
+plot(series=notHigherTimeframe ? truncate(pivot, 2) : na, title='P', color=pivot[1] != pivot and notHigherTimeframe ? na : color.rgb(0, 113, 133), style=plot.style_circles, linewidth=2)
+plot(series=notHigherTimeframe ? truncate(tc, 2) : na, title='TC', color=pivot[1] != pivot and notHigherTimeframe ? na : color.rgb(134, 59, 255), style=plot.style_circles, linewidth=2)
+plot(series=notHigherTimeframe ? truncate(bc, 2) : na, title='BC', color=pivot[1] != pivot and notHigherTimeframe ? na : color.rgb(134, 59, 255), style=plot.style_circles, linewidth=2)
+plot(series=notHigherTimeframe ? r1Level : na, title='R1', color=pivot[1] != pivot and notHigherTimeframe ? na : #32cd32, style=plot.style_circles, linewidth=1)
+plot(series=notHigherTimeframe ? s1Level : na, title='S1', color=pivot[1] != pivot and notHigherTimeframe ? na : #ff3030, style=plot.style_circles, linewidth=1)
+plot(series=notHigherTimeframe ? r2Level : na, title='R2', color=pivot[1] != pivot and notHigherTimeframe ? na : #32cd32, style=plot.style_circles, linewidth=1)
+plot(series=notHigherTimeframe ? s2Level : na, title='S2', color=pivot[1] != pivot and notHigherTimeframe ? na : #ff3030, style=plot.style_circles, linewidth=1)
+plot(series=notHigherTimeframe ? r3Level : na, title='R3', color=pivot[1] != pivot and notHigherTimeframe ? na : #32cd32, style=plot.style_circles, linewidth=1)
+plot(series=notHigherTimeframe ? s3Level : na, title='S3', color=pivot[1] != pivot and notHigherTimeframe ? na : #ff3030, style=plot.style_circles, linewidth=1)
+// plot(series=notHigherTimeframe ? r4Level : na, title='R4', color=pivot[1] != pivot and notHigherTimeframe ? na : #32cd32, style=plot.style_circles, linewidth=1)
+// plot(series=notHigherTimeframe ? r5Level : na, title='R5', color=pivot[1] != pivot and notHigherTimeframe ? na : #32cd32, style=plot.style_circles, linewidth=1)
+// plot(series=notHigherTimeframe ? s4Level : na, title='S4', color=pivot[1] != pivot and notHigherTimeframe ? na : #ff3030, style=plot.style_circles, linewidth=1)
+// plot(series=notHigherTimeframe ? s5Level : na, title='S5', color=pivot[1] != pivot and notHigherTimeframe ? na : #ff3030, style=plot.style_circles, linewidth=1)
+
+
+
+
+// Hight low OPEN  Close indicator statrtes
+
+
+// Inputs
+
+var GRP1 = "Timeframes"
+line1 = input.bool(false, title="=============== DAILY ===============", group=GRP1)
+daily = input.string(title='View', defval='OHLC', options=['Off', 'HL', 'OC', 'OHLC', 'OHLC + Candle'], group=GRP1)
+dailyHText = input.string(defval='PD High',  title='H', inline="1", group=GRP1)
+dailyLText = input.string(defval='PD LOW',   title='L', inline="1", group=GRP1)
+dailyOText = input.string(defval='PD OPEN',  title='O', inline="1", group=GRP1)
+dailyCText = input.string(defval='PD CLOSE', title='C', inline="1", group=GRP1)
+
+
+line2 = input.bool(false, title="=============== WEEKLY ===============", group=GRP1)
+weekly = input.string(title='View', defval='Off', options=['Off', 'HL', 'OC', 'OHLC', 'OHLC + Candle'], group=GRP1)
+weeklyHText = input.string(defval='PWH', title='H', inline="2", group=GRP1)
+weeklyLText = input.string(defval='PWL', title='L', inline="2", group=GRP1)
+weeklyCText = input.string(defval='PWC', title='C', inline="2", group=GRP1)
+weeklyOText = input.string(defval='PWO', title='O', inline="2", group=GRP1)
+
+
+line3 = input.bool(false, title="=============== MONTHLY ===============", group=GRP1)
+monthly = input.string(title='View', defval='Off', options=['Off', 'HL', 'OC', 'OHLC', 'OHLC + Candle'], group=GRP1)
+monthlyHText = input.string(defval='PMH', title='H', inline="3", group=GRP1)
+monthlyLText = input.string(defval='PML', title='L', inline="3", group=GRP1)
+monthlyOText = input.string(defval='PMO', title='O', inline="3", group=GRP1)
+monthlyCText = input.string(defval='PMC', title='C', inline="3", group=GRP1)
+
+
+line4 = input.bool(false, title="=============== CUSTOM ===============", group=GRP1)
+custom_timeframe = input.timeframe('240', title='View', inline='4', group=GRP1)
+custom = input.string(title='', defval='Off', options=['Off', 'HL', 'OC', 'OHLC', 'OHLC + Candle'], inline='4', group=GRP1)
+customHText = input.string(defval='PCH', title='H', inline="5", group=GRP1)
+customLText = input.string(defval='PCL', title='L', inline="5", group=GRP1)
+customOText = input.string(defval='PCO', title='O', inline="5", group=GRP1)
+customCText = input.string(defval='PCC', title='C', inline="5", group=GRP1)
+line5 = input.bool(false, title="=======================================", group=GRP1)
+
+var GRP2 = "Lines + Label Settings"
+showOne = input.bool(true, 'Show only 1 previous OHLC?', group = GRP2)
+_offset = input.int(1, title='Offset', minval=0, maxval=2)
+showLabels = input(true, 'Show Labels', group=GRP2)
+labelPosition = input.string(title='Label Position', defval='End', options=['Start', 'End'], group=GRP2)
+
+o_color = input.color(color.new(#000000, 1), "Open Color", inline="1", group = GRP2)
+c_color = input.color(color.new(#000000, 1), "Close Color", inline="1", group = GRP2)
+h_color = input.color(color.new(#070707, 1), "High Color", inline="2", group = GRP2)
+l_color = input.color(color.new(#080808, 1), "Low Color", inline="2", group = GRP2)
+
+// FUNCTIONS
+t = time(custom_timeframe)
+
+isNewbar = not na(t) and (na(t[1]) or t > t[1])
+
+tfInMinutes(simple string tf = "") =>
+    float chartTf =
+      timeframe.multiplier * (
+      timeframe.isseconds ? 1. / 60             :
+      timeframe.isminutes ? 1.                  :
+      timeframe.isdaily   ? 60. * 24            :
+      timeframe.isweekly  ? 60. * 24 * 7        :
+      timeframe.ismonthly ? 60. * 24 * 30.4375  : na)
+    float result = tf == "" ? chartTf : request.security(syminfo.tickerid, tf, chartTf)
+
+inTimeframe(_t) => tfInMinutes(_t) > tfInMinutes(timeframe.period)
+
+
+// Range
+reso(exp, res) => request.security(syminfo.tickerid, res, exp, lookahead=barmerge.lookahead_on)
+
+getData(_t, _var) =>
+    o = reso(open[_offset], _t)
+    h = reso(high[_offset], _t)
+    l = reso(low[_offset], _t)
+    c = reso(close[_offset], _t)
+    show = _var != "Off" and inTimeframe(_t)
+    show_candle = show and str.contains(_var, "Candle")
+    _time = time(_t)
+    newbar = na(_time[1]) or _time > _time[1]
+    hl = _var == 'HL' or _var == 'OHLC' or _var == 'OHLC + Candle'
+    oc = _var == 'OC' or _var == 'OHLC' or _var == 'OHLC + Candle'
+
+    [o, h, l, c, show, show_candle, newbar, hl, oc]
+
+labelPos(_tf) =>
+    labelPosition == "End" ? time_close(_tf) : time
+
+// ---------- Daily ----------
+var line d_o_line = na
+var line d_h_line = na
+var line d_l_line = na
+var line d_c_line = na
+var label d_o_label = na
+var label d_h_label = na
+var label d_l_label = na
+var label d_c_label = na
+
+[d_o, d_h, d_l, d_c, d_show, d_show_candle, d_newbar, d_hl, d_oc] = getData("D", daily)
+
+plotcandle(d_show_candle and d_newbar ? d_o : na, d_h, d_l, d_c, color=d_c >= d_o ? color.white : color.white)
+
+if d_newbar and d_show
+    if showOne
+        line.delete(d_o_line)
+        line.delete(d_h_line)
+        line.delete(d_l_line)
+        line.delete(d_c_line)
+        label.delete(d_o_label)
+        label.delete(d_h_label)
+        label.delete(d_l_label)
+        label.delete(d_c_label)
+
+    if d_oc
+        d_o_line := line.new(x1=time, y1=d_o, x2=time_close("D"), y2=d_o, xloc=xloc.bar_time, style=line.style_solid, color=o_color)
+        d_c_line := line.new(x1=time, y1=d_c, x2=time_close("D"), y2=d_c, xloc=xloc.bar_time, style=line.style_solid, color=c_color)
+        if showLabels
+            d_o_label := label.new(x=labelPos("D"), y= d_o, xloc=xloc.bar_time, text=dailyOText + "     ", textcolor=o_color, style=label.style_label_up)
+            d_c_label := label.new(x=labelPos("D"), y= d_c, xloc=xloc.bar_time, text=dailyCText + "     ", textcolor=c_color, style=label.style_label_up)
+
+    if d_hl
+        d_h_line := line.new(x1=time, y1=d_h, x2=time_close("D"), y2=d_h, xloc=xloc.bar_time, style=line.style_solid, color=h_color)  
+        d_l_line := line.new(x1=time, y1=d_l, x2=time_close("D"), y2=d_l, xloc=xloc.bar_time, style=line.style_solid, color=l_color)
+        if showLabels
+            d_h_label := label.new(x=labelPos("D"), y= d_h, xloc=xloc.bar_time, text=dailyHText + "     ", textcolor=h_color, style=label.style_label_up)  
+            d_l_label := label.new(x=labelPos("D"), y= d_l, xloc=xloc.bar_time, text=dailyLText + "     ", textcolor=l_color, style=label.style_label_up)
+
+// ---------- Weekly ----------
+var line w_o_line = na
+var line w_h_line = na
+var line w_l_line = na
+var line w_c_line = na
+var label w_o_label = na
+var label w_h_label = na
+var label w_l_label = na
+var label w_c_label = na
+
+[w_o, w_h, w_l, w_c, w_show, w_show_candle, w_newbar, w_hl, w_oc] = getData("W", weekly)
+
+plotcandle(w_show_candle and w_newbar ? w_o : na, w_h, w_l, w_c, color=w_c >= w_o ? color.white : color.white)
+
+if w_newbar and w_show
+    if showOne
+        line.delete(w_o_line)
+        line.delete(w_h_line)
+        line.delete(w_l_line)
+        line.delete(w_c_line)
+        label.delete(w_o_label)
+        label.delete(w_h_label)
+        label.delete(w_l_label)
+        label.delete(w_c_label)
+
+    if w_oc
+        w_o_line := line.new(x1=time, y1=w_o, x2=time_close("W"), y2=w_o, xloc=xloc.bar_time, style=line.style_solid, color=o_color)
+        w_c_line := line.new(x1=time, y1=w_c, x2=time_close("W"), y2=w_c, xloc=xloc.bar_time, style=line.style_solid, color=c_color)
+        if showLabels
+            w_o_label := label.new(x=labelPos("W"), y= w_o, xloc=xloc.bar_time, text=weeklyOText + "     ", textcolor=o_color, style=label.style_none)
+            w_c_label := label.new(x=labelPos("W"), y= w_c, xloc=xloc.bar_time, text=weeklyCText + "     ", textcolor=c_color, style=label.style_none)
+
+    if w_hl
+        w_h_line := line.new(x1=time, y1=w_h, x2=time_close("W"), y2=w_h, xloc=xloc.bar_time, style=line.style_solid, color=h_color)
+        w_l_line := line.new(x1=time, y1=w_l, x2=time_close("W"), y2=w_l, xloc=xloc.bar_time, style=line.style_solid, color=l_color)
+        if showLabels
+            w_h_label := label.new(x=labelPos("W"), y= w_h, xloc=xloc.bar_time, text=weeklyHText + "     ", textcolor=h_color, style=label.style_none)    
+            w_l_label := label.new(x=labelPos("W"), y= w_l, xloc=xloc.bar_time, text=weeklyLText + "     ", textcolor=l_color, style=label.style_none)
+
+
+
+// ---------- Monthly ----------
+var line m_o_line = na
+var line m_h_line = na
+var line m_l_line = na
+var line m_c_line = na
+var label m_o_label = na
+var label m_h_label = na
+var label m_l_label = na
+var label m_c_label = na
+
+[m_o, m_h, m_l, m_c, m_show, m_show_candle, m_newbar, m_hl, m_oc] = getData("M", monthly)
+
+plotcandle(m_show_candle and m_newbar ? m_o : na, m_h, m_l, m_c, color=m_c >= m_o ? color.rgb(255, 255, 255) : color.rgb(255, 255, 255))
+
+if m_newbar and m_show
+    if showOne
+        line.delete(m_o_line)
+        line.delete(m_h_line)
+        line.delete(m_l_line)
+        line.delete(m_c_line)
+        label.delete(m_o_label)
+        label.delete(m_h_label)
+        label.delete(m_l_label)
+        label.delete(m_c_label)
+
+    if m_oc
+        m_o_line := line.new(x1=time, y1=m_o, x2=time_close("M"), y2=m_o, xloc=xloc.bar_time, style=line.style_solid, color=o_color)
+        m_c_line := line.new(x1=time, y1=m_c, x2=time_close("M"), y2=m_c, xloc=xloc.bar_time, style=line.style_solid, color=c_color)
+        if showLabels
+            m_o_label := label.new(x=labelPos("M"), y= m_o, xloc=xloc.bar_time, text=monthlyOText + "     ", textcolor=o_color, style=label.style_none)
+            m_c_label := label.new(x=labelPos("M"), y= m_c, xloc=xloc.bar_time, text=monthlyCText + "     ", textcolor=c_color, style=label.style_none)
+
+    if m_hl
+        m_h_line := line.new(x1=time, y1=m_h, x2=time_close("M"), y2=m_h, xloc=xloc.bar_time, style=line.style_solid, color=h_color)  
+        m_l_line := line.new(x1=time, y1=m_l, x2=time_close("M"), y2=m_l, xloc=xloc.bar_time, style=line.style_solid, color=l_color)
+        if showLabels
+            m_h_label := label.new(x=labelPos("M"), y= m_h, xloc=xloc.bar_time, text=monthlyHText + "     ", textcolor=h_color, style=label.style_none) 
+            m_l_label := label.new(x=labelPos("M"), y= m_l, xloc=xloc.bar_time, text=monthlyLText + "     ", textcolor=l_color, style=label.style_none)
+
+
+// ---------- Custom ----------
+var line c_o_line = na
+var line c_h_line = na
+var line c_l_line = na
+var line c_c_line = na
+var label c_o_label = na
+var label c_h_label = na
+var label c_l_label = na
+var label c_c_label = na
+
+[c_o, c_h, c_l, c_c, c_show, c_show_candle, c_newbar, c_hl, c_oc] = getData(custom_timeframe, custom)
+
+plotcandle(c_show_candle and c_newbar ? c_o : na, c_h, c_l, c_c, color=c_c >= c_o ? color.rgb(255, 255, 255) : color.white)
+
+if c_newbar and c_show
+    if showOne
+        line.delete(c_o_line)
+        line.delete(c_h_line)
+        line.delete(c_l_line)
+        line.delete(c_c_line)
+        label.delete(c_o_label)
+        label.delete(c_h_label)
+        label.delete(c_l_label)
+        label.delete(c_c_label)
+
+    if c_oc
+        c_o_line := line.new(x1=time, y1=c_o, x2=time_close(custom_timeframe), y2=c_o, xloc=xloc.bar_time, style=line.style_solid, color=o_color)
+        c_c_line := line.new(x1=time, y1=c_c, x2=time_close(custom_timeframe), y2=c_c, xloc=xloc.bar_time, style=line.style_solid, color=c_color)
+        if showLabels
+            c_o_label := label.new(x=time_close(custom_timeframe), y= c_o, xloc=xloc.bar_time, text=customOText + "     ", textcolor=o_color, style=label.style_none)
+            c_c_label := label.new(x=time_close(custom_timeframe), y= c_c, xloc=xloc.bar_time, text=customCText + "     ", textcolor=c_color, style=label.style_none)
+
+    if c_hl
+        c_h_line := line.new(x1=time, y1=c_h, x2=time_close(custom_timeframe), y2=c_h, xloc=xloc.bar_time, style=line.style_solid, color=h_color)
+        c_l_line := line.new(x1=time, y1=c_l, x2=time_close(custom_timeframe), y2=c_l, xloc=xloc.bar_time, style=line.style_solid, color=l_color)
+        if showLabels
+            c_h_label := label.new(x=time_close(custom_timeframe), y= c_h, xloc=xloc.bar_time, text=customHText + "     ", textcolor=h_color, style=label.style_none)    
+            c_l_label := label.new(x=time_close(custom_timeframe), y= c_l, xloc=xloc.bar_time, text=customLText + "     ", textcolor=l_color, style=label.style_none)
+
+// Alerts
+alertcondition(d_o, title='Daily Open Price', message='Crossing previous Daily Open price on {{ticker}}')
+alertcondition(d_c, title='Daily Close Price', message='Crossing previous Daily Close price on {{ticker}}')
+alertcondition(d_h, title='Daily High Price', message='Crossing previous Daily High price on {{ticker}}')
+alertcondition(d_l, title='Daily Low Price', message='Crossing previous Daily Low price on {{ticker}}')
+
+alertcondition(w_o, title='Weekly Open Price', message='Crossing previous Weekly Open price on {{ticker}}')
+alertcondition(w_c, title='Weekly Close Price', message='Crossing previous Weekly Close price on {{ticker}}')
+alertcondition(w_h, title='Weekly High Price', message='Crossing previous Weekly High price on {{ticker}}')
+alertcondition(w_l, title='Weekly Low Price', message='Crossing previous Weekly Low price on {{ticker}}')
+
+alertcondition(m_o, title='Monthly Open Price', message='Crossing previous Monthly Open price on {{ticker}}')
+alertcondition(m_c, title='Monthly Close Price', message='Crossing previous Monthly Close price on {{ticker}}')
+alertcondition(m_h, title='Monthly High Price', message='Crossing previous Monthly High price on {{ticker}}')
+alertcondition(m_l, title='Monthly Low Price', message='Crossing previous Monthly Low price on {{ticker}}')
+
+alertcondition(c_o, title='Custom Open Price', message='Crossing previous {{interval}} Open price on {{ticker}}')
+alertcondition(c_c, title='Custom Close Price', message='Crossing previous {{interval}} Close price on {{ticker}}')
+alertcondition(c_h, title='Custom High Price', message='Crossing previous {{interval}} High price on {{ticker}}')
+alertcondition(c_l, title='Custom Low Price', message='Crossing previous {{interval}} Low price on {{ticker}}')
+
+//VWAP
+PlotVWAP = input(title='Plot VWAP?', defval=true)
+VWAPSource = input(title='VWAP Source', defval=close)
+VWAPrice = ta.vwap(VWAPSource)
+plot(PlotVWAP ? VWAPrice : na, color=color.new(#ff52cb, 0), title='VWAP')
+
+
+//========================================TWAP+=====================================================================
+smoothing = input(14)
+resolution = input('0', 'Timeframe')  //240 D
+src = input(ohlc4)
+res = resolution != '0' ? resolution : timeframe.period
+weight = ta.barssince(ta.change(request.security(syminfo.tickerid, res, time, lookahead=barmerge.lookahead_on)))
+price = 0.
+price := weight == 0 ? src : src + nz(price[1])
+twap = price / (weight + 1)
+ma = smoothing < 2 ? twap : ta.sma(twap, smoothing)
+bullish = smoothing < 2 ? src >= ma : src > ma
+disposition = bullish ? color.lime : color.red
+basis = plot(src, 'OHLC4', disposition, linewidth=1, transp=100)
+work = plot(ma, 'TWAP', disposition, linewidth=2, transp=20)
+// fill(basis, work, disposition, transp=65)
+
+showcross = input(false, title='Show Buy/Sell')
+crossup = ma[1] < src[1] and ma > src
+crossdn = ma[1] > src[1] and ma < src
+plotshape(showcross and crossup and not crossup[1] ? src : na, location=location.absolute, style=shape.labeldown, color=color.new(color.red, 0), size=size.normal, text='Sell', textcolor=color.new(#ffffff, 0), offset=-1)
+plotshape(showcross and crossdn and not crossdn[1] ? src : na, location=location.absolute, style=shape.labelup, color=color.new(color.lime, 0), size=size.normal, text='Buy', textcolor=color.new(#ffffff, 0), offset=-1)
